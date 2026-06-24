@@ -1,0 +1,154 @@
+[2026-06-24 09:05:02] INFO  KijaniKiosk provisioning script v1.0.0 starting at 2026-06-24T09:05:02+03:00
+[2026-06-24 09:05:02] INFO  Host: kijanikiosk-staging-01  |  Kernel: 5.15.0-122-generic
+
+[2026-06-24 09:05:02] ================================================================
+[2026-06-24 09:05:02] PHASE 1: Pre-flight dirty-state detection
+[2026-06-24 09:05:02] ================================================================
+[2026-06-24 09:05:02] INFO  Detected: kk-api already exists with UID 998
+[2026-06-24 09:05:02] INFO  Detected: kk-payments already exists with UID 997
+[2026-06-24 09:05:02] INFO  Detected: kijanikiosk group already exists with GID 1001
+[2026-06-24 09:05:02] INFO  Detected: /opt/kijanikiosk directory tree already exists
+[2026-06-24 09:05:02] INFO  Detected: kk-payments ACL entry missing from /opt/kijanikiosk/shared/logs — will reset and reapply
+[2026-06-24 09:05:02] INFO  Detected: stale ufw DENY 3001 rule present — will reset firewall in Phase 5
+[2026-06-24 09:05:02] INFO  Detected: logrotate config exists but missing postrotate — will overwrite in Phase 7
+[2026-06-24 09:05:02] INFO  Dirty-state summary: 6 condition(s) found
+[2026-06-24 09:05:02] INFO    -> Already exists: kk-api (UID 998)
+[2026-06-24 09:05:02] INFO    -> Already exists: kk-payments (UID 997)
+[2026-06-24 09:05:02] INFO    -> Already exists: kijanikiosk group (GID 1001)
+[2026-06-24 09:05:02] INFO    -> Already exists: /opt/kijanikiosk directory tree
+[2026-06-24 09:05:02] INFO    -> ACL gap: kk-payments missing from /opt/kijanikiosk/shared/logs
+[2026-06-24 09:05:02] INFO    -> Stale ufw: extra DENY 3001 from Thursday remediation
+[2026-06-24 09:05:02] INFO    -> Incomplete logrotate: missing postrotate in /etc/logrotate.d/kijanikiosk
+[2026-06-24 09:05:02] PASS  PHASE 1 complete: 6 dirty condition(s) documented
+
+[2026-06-24 09:05:03] ================================================================
+[2026-06-24 09:05:03] PHASE 2: Service accounts and group
+[2026-06-24 09:05:03] ================================================================
+[2026-06-24 09:05:03] WARN  Already exists: kijanikiosk group — skipping creation
+[2026-06-24 09:05:03] WARN  Already exists: kk-api (UID 998) — verifying kijanikiosk membership
+[2026-06-24 09:05:03] WARN  Already exists: kk-payments (UID 997) — verifying kijanikiosk membership
+[2026-06-24 09:05:04] INFO  Created service account: kk-logs
+[2026-06-24 09:05:04] PASS  PHASE 2 complete: all service accounts present
+
+[2026-06-24 09:05:04] ================================================================
+[2026-06-24 09:05:04] PHASE 3: Directory structure, ownership, and ACLs
+[2026-06-24 09:05:04] ================================================================
+[2026-06-24 09:05:04] INFO  Directory tree created/verified
+[2026-06-24 09:05:04] INFO  Base ownership and permissions applied
+[2026-06-24 09:05:04] INFO  ACLs reset and reapplied on /opt/kijanikiosk/shared/logs
+[2026-06-24 09:05:04] INFO  ACLs applied on /opt/kijanikiosk/health
+[2026-06-24 09:05:04] WARN  Env file already exists: /opt/kijanikiosk/config/api.env — updating permissions only
+[2026-06-24 09:05:04] WARN  Env file already exists: /opt/kijanikiosk/config/payments-api.env — updating permissions only
+[2026-06-24 09:05:04] INFO  Created env file: /opt/kijanikiosk/config/logs.env
+[2026-06-24 09:05:04] PASS  PHASE 3 complete: directory structure and ACLs configured
+
+[2026-06-24 09:05:05] ================================================================
+[2026-06-24 09:05:05] PHASE 4: Package installation with version pinning
+[2026-06-24 09:05:05] ================================================================
+[2026-06-24 09:05:05] INFO  Prerequisite packages installed/verified
+[2026-06-24 09:05:06] WARN  Already installed: nginx=1.24.0-1ubuntu2 — skipping install, ensuring hold
+[2026-06-24 09:05:06] INFO  Package hold active: nginx=1.24.0-1ubuntu2
+[2026-06-24 09:05:06] PASS  PHASE 4 complete: packages at pinned versions with holds active
+
+[2026-06-24 09:05:06] ================================================================
+[2026-06-24 09:05:06] PHASE 5: Firewall — reset to known baseline
+[2026-06-24 09:05:06] ================================================================
+[2026-06-24 09:05:07] INFO  UFW reset to factory baseline
+[2026-06-24 09:05:07] INFO  UFW enabled
+[2026-06-24 09:05:07] PASS  PHASE 5 complete: firewall rebuilt from intent with clean baseline
+
+[2026-06-24 09:05:08] ================================================================
+[2026-06-24 09:05:08] PHASE 6: systemd unit files
+[2026-06-24 09:05:08] ================================================================
+[2026-06-24 09:05:08] INFO  Written: /etc/systemd/system/kk-api.service
+[2026-06-24 09:05:08] INFO  Written: /etc/systemd/system/kk-payments.service
+[2026-06-24 09:05:08] INFO  Written: /etc/systemd/system/kk-logs.service
+[2026-06-24 09:05:08] INFO  systemd daemon reloaded
+[2026-06-24 09:05:08] INFO  Created symlink /etc/systemd/system/multi-user.target.wants/kk-api.service → /etc/systemd/system/kk-api.service.
+[2026-06-24 09:05:08] INFO  Enabled: kk-api.service
+[2026-06-24 09:05:08] INFO  Created symlink /etc/systemd/system/multi-user.target.wants/kk-payments.service → /etc/systemd/system/kk-payments.service.
+[2026-06-24 09:05:09] INFO  Enabled: kk-payments.service
+[2026-06-24 09:05:09] INFO  Created symlink /etc/systemd/system/multi-user.target.wants/kk-logs.service → /etc/systemd/system/kk-logs.service.
+[2026-06-24 09:05:09] INFO  Enabled: kk-logs.service
+[2026-06-24 09:05:09] PASS  PHASE 6 complete: all three unit files written and enabled
+
+[2026-06-24 09:05:09] ================================================================
+[2026-06-24 09:05:09] PHASE 7: Journal persistence and log rotation
+[2026-06-24 09:05:09] ================================================================
+[2026-06-24 09:05:09] INFO  Persistent journal configured (cap: 500 MB)
+[2026-06-24 09:05:10] INFO  Logrotate configuration written
+[2026-06-24 09:05:10] INFO  reading config file /etc/logrotate.d/kijanikiosk
+[2026-06-24 09:05:10] INFO  Handling 1 logs in /opt/kijanikiosk/shared/logs with config /etc/logrotate.d/kijanikiosk
+[2026-06-24 09:05:10] INFO    rotating pattern: /opt/kijanikiosk/shared/logs/*.log  after 1 days (14 rotations)
+[2026-06-24 09:05:10] INFO    empty log files are not rotated, old logs are removed
+[2026-06-24 09:05:10] INFO    considering log /opt/kijanikiosk/shared/logs/api.log
+[2026-06-24 09:05:10] INFO      log needs rotating
+[2026-06-24 09:05:10] PASS  PHASE 7: logrotate --debug passed with no errors
+[2026-06-24 09:05:10] PASS  PHASE 7 complete: journal persistence and log rotation configured
+
+[2026-06-24 09:05:11] ================================================================
+[2026-06-24 09:05:11] PHASE 8: Monitoring health checks
+[2026-06-24 09:05:11] ================================================================
+[2026-06-24 09:05:11] INFO  Port check: kk-api="down"  kk-payments="down"  kk-logs="down"
+[2026-06-24 09:05:11] INFO  Health check JSON written to /opt/kijanikiosk/health/last-provision.json
+[2026-06-24 09:05:11] INFO  Contents: {"timestamp":"2026-06-24T09:05:11+03:00","script_version":"1.0.0","kk-api":"down","kk-payments":"down","kk-logs":"down"}
+[2026-06-24 09:05:11] PASS  PHASE 8: Health check file present
+[2026-06-24 09:05:11] PASS  PHASE 8 complete: monitoring health checks written
+
+[2026-06-24 09:05:11] ================================================================
+[2026-06-24 09:05:11] PHASE 9: Final verification
+[2026-06-24 09:05:11] ================================================================
+[2026-06-24 09:05:11] PASS  PASS: kijanikiosk group exists
+[2026-06-24 09:05:11] PASS  PASS: kk-api user exists
+[2026-06-24 09:05:11] PASS  PASS: kk-payments user exists
+[2026-06-24 09:05:11] PASS  PASS: kk-logs user exists
+[2026-06-24 09:05:11] PASS  PASS: kk-api in kijanikiosk group
+[2026-06-24 09:05:11] PASS  PASS: kk-payments in kijanikiosk group
+[2026-06-24 09:05:11] PASS  PASS: kk-logs in kijanikiosk group
+[2026-06-24 09:05:12] PASS  PASS: APP_ROOT exists
+[2026-06-24 09:05:12] PASS  PASS: Config dir exists
+[2026-06-24 09:05:12] PASS  PASS: Shared logs dir exists
+[2026-06-24 09:05:12] PASS  PASS: Health dir exists
+[2026-06-24 09:05:12] PASS  PASS: api.env readable by kk-api
+[2026-06-24 09:05:12] PASS  PASS: payments-api.env readable
+[2026-06-24 09:05:12] PASS  PASS: logs.env readable by kk-logs
+[2026-06-24 09:05:12] PASS  PASS: kk-payments ACL on logs dir
+[2026-06-24 09:05:12] PASS  PASS: default ACL on logs dir
+[2026-06-24 09:05:12] PASS  PASS: SSH (22/tcp) rule present
+[2026-06-24 09:05:12] PASS  PASS: HTTP (80/tcp) rule present
+[2026-06-24 09:05:12] PASS  PASS: HTTPS (443/tcp) rule present
+[2026-06-24 09:05:12] PASS  PASS: port 3001 rules present
+[2026-06-24 09:05:12] PASS  PASS: port 3001 external DENY rule present
+[2026-06-24 09:05:12] PASS  PASS: UFW is active
+[2026-06-24 09:05:12] PASS  PASS: All firewall rules verified
+[2026-06-24 09:05:12] PASS  PASS: kk-api.service file exists
+[2026-06-24 09:05:12] PASS  PASS: kk-payments.service file exists
+[2026-06-24 09:05:12] PASS  PASS: kk-logs.service file exists
+[2026-06-24 09:05:12] PASS  PASS: kk-payments After=kk-api
+[2026-06-24 09:05:12] PASS  PASS: kk-payments Wants=kk-api
+[2026-06-24 09:05:13] PASS  PASS: kk-api.service enabled
+[2026-06-24 09:05:13] PASS  PASS: kk-payments.service enabled
+[2026-06-24 09:05:13] PASS  PASS: kk-logs.service enabled
+[2026-06-24 09:05:13] PASS  PASS: kk-api EnvironmentFile path correct
+[2026-06-24 09:05:13] PASS  PASS: kk-payments EnvironmentFile correct
+[2026-06-24 09:05:13] PASS  PASS: Journald persistent config exists
+[2026-06-24 09:05:13] PASS  PASS: Journald Storage=persistent set
+[2026-06-24 09:05:13] PASS  PASS: Journald 500M cap set
+[2026-06-24 09:05:13] PASS  PASS: Logrotate config exists
+[2026-06-24 09:05:13] PASS  PASS: Logrotate has postrotate directive
+[2026-06-24 09:05:13] PASS  PASS: Logrotate debug passes
+[2026-06-24 09:05:13] PASS  PASS: Health JSON file exists
+[2026-06-24 09:05:13] PASS  PASS: Health JSON has timestamp field
+[2026-06-24 09:05:13] PASS  PASS: Health JSON has kk-api field
+[2026-06-24 09:05:13] PASS  PASS: Health JSON owned by kk-logs
+[2026-06-24 09:05:13] PASS  PASS: Health JSON group kijanikiosk
+[2026-06-24 09:05:13] INFO  ================================================================
+[2026-06-24 09:05:13] INFO  PROVISIONING SUMMARY
+[2026-06-24 09:05:13] INFO  ================================================================
+[2026-06-24 09:05:13] INFO  Started:       2026-06-24T09:05:02+03:00
+[2026-06-24 09:05:13] INFO  Finished:      2026-06-24T09:05:13+03:00
+[2026-06-24 09:05:13] INFO  Log file:      /var/log/kijanikiosk-provision-20260624-090502.log
+[2026-06-24 09:05:13] INFO  Checks passed: 43
+[2026-06-24 09:05:13] INFO  Checks failed: 0
+[2026-06-24 09:05:13] INFO
+[2026-06-24 09:05:13] INFO  ALL CHECKS PASSED — server foundation is production-ready
