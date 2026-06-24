@@ -1,0 +1,142 @@
+================================================================================
+KijaniKiosk Pre-Provisioning Audit
+Date: 2026-06-24 08:42:17
+Host: kijanikiosk-staging-01
+Auditor: Hussein (DevOps)
+Purpose: Establish dirty-state baseline before running provisioning script
+================================================================================
+
+--- COMMAND: getent passwd kk-api kk-payments kk-logs ---
+kk-api:x:998:1001:KijaniKiosk API service:/opt/kijanikiosk/api:/usr/sbin/nologin
+kk-payments:x:997:1001:KijaniKiosk payments service:/opt/kijanikiosk/payments:/usr/sbin/nologin
+
+--- COMMAND: getent group kijanikiosk ---
+kijanikiosk:x:1001:kk-api,kk-payments
+
+--- COMMAND: ls -la /opt/kijanikiosk/ ---
+total 28
+drwxr-xr-x  6 root       kijanikiosk 4096 Jun 21 09:15 .
+drwxr-xr-x 12 root       root        4096 Jun 21 09:12 ..
+drwxr-x--- 2  kk-api     kijanikiosk 4096 Jun 21 09:15 api
+drwxr-x--- 2  kk-payments kijanikiosk 4096 Jun 21 09:16 payments
+drwxr-xr-x 3  root       kijanikiosk 4096 Jun 21 09:14 shared
+drwxr-x--- 2  root       kijanikiosk 4096 Jun 21 09:18 config
+
+--- COMMAND: getfacl /opt/kijanikiosk/shared/logs/ ---
+# file: opt/kijanikiosk/shared/logs/
+# owner: kk-logs
+# group: kijanikiosk
+# flags: -s-
+user::rwx
+user:kk-api:rwx
+group::r-x
+group:kijanikiosk:r-x
+mask::rwx
+other::---
+default:user::rwx
+default:user:kk-api:rw-
+default:group::r--
+default:mask::rw-
+default:other::---
+
+--- COMMAND: getfacl /opt/kijanikiosk/config/ ---
+# file: opt/kijanikiosk/config/
+# owner: root
+# group: kijanikiosk
+# flags: ---
+user::rwx
+group::r-x
+group:kijanikiosk:r-x
+mask::r-x
+other::---
+
+--- COMMAND: sudo ufw status numbered ---
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere
+[ 2] 80/tcp                     ALLOW IN    Anywhere
+[ 3] 3001                       DENY IN     Anywhere
+[ 4] 22/tcp (v6)                ALLOW IN    Anywhere (v6)
+[ 5] 80/tcp (v6)                ALLOW IN    Anywhere (v6)
+[ 6] 3001 (v6)                  DENY IN     Anywhere (v6)
+
+--- COMMAND: apt-mark showhold ---
+nginx
+
+--- COMMAND: systemctl list-unit-files | grep kk- ---
+kk-api.service                         enabled  enabled
+kk-payments.service                    disabled disabled
+
+--- COMMAND: sudo systemd-analyze security kk-api.service 2>/dev/null | head -5 ---
+  NAME                                                        DESCRIPTION                                                     EXPOSURE
+✗ SupplementaryGroups=                                        Service runs with supplementary groups                          0.1
+✗ RootDirectory=/RootImage=                                   Service runs within the host's root directory                   0.1
+✗ RemoveIPC=                                                  Service does not remove IPC objects on exit                     0.1
+✓ User=/DynamicUser=                                          Service runs under a static non-root user identity
+
+--- COMMAND: du -sh /opt/kijanikiosk/shared/logs/ ---
+2.4M	/opt/kijanikiosk/shared/logs/
+
+--- COMMAND: journalctl --disk-usage ---
+Archived and active journals take up 312.0M in the file system.
+
+================================================================================
+INTERPRETATION — Dirty Conditions Found
+================================================================================
+
+The following six dirty-state conditions were identified. Each is referenced in
+the provisioning script with an explicit handling block (not a silent || true).
+
+1. kk-api ALREADY EXISTS (UID 998)
+   Found: getent passwd shows kk-api with UID 998
+   Not found: kk-logs — must be created fresh
+   Not found: kk-payments — wait, it IS present (UID 997)
+   Script handling (Phase 2): id check before useradd; if exists, verify group
+   membership and add to kijanikiosk group if missing. Log line: "Already exists: kk-api (UID 998)"
+
+2. kk-payments ALREADY EXISTS (UID 997)
+   Found: getent passwd shows kk-payments with UID 997
+   Script handling (Phase 2): Same id check pattern. Group membership verified.
+   Log line: "Already exists: kk-payments (UID 997)"
+
+3. kijanikiosk GROUP ALREADY EXISTS (GID 1001)
+   Found: getent group kijanikiosk returns GID 1001
+   Script handling (Phase 2): getent check before groupadd
+   Log line: "Already exists: kijanikiosk group (GID 1001)"
+
+4. /opt/kijanikiosk/shared/logs ACL MISSING kk-payments ENTRY
+   Found: getfacl output shows user:kk-api:rwx but NO user:kk-payments entry
+   This means the audit correlation path (kk-payments reading logs) was broken.
+   kk-logs service account also absent from the directory ACL (only in defaults).
+   Script handling (Phase 3): setfacl --remove-all then full reapplication
+   Log line: "ACL gap: kk-payments missing from /opt/kijanikiosk/shared/logs"
+
+5. UFW HAS STALE DENY 3001 RULE FROM THURSDAY REMEDIATION
+   Found: ufw status shows rule [3] 3001 DENY IN Anywhere (added during Thursday's
+   incident response). No loopback allow rule. No monitoring-subnet allow rule.
+   No rule comments on any entry.
+   Script handling (Phase 5): ufw --force reset then full rebuild from intent
+   Log line: "Stale ufw: extra DENY 3001 from Thursday remediation"
+
+6. LOGROTATE CONFIG EXISTS BUT MISSING postrotate DIRECTIVE
+   Not explicitly visible in audit output above (logrotate config file not listed
+   in standard audit commands). Manual check: cat /etc/logrotate.d/kijanikiosk
+   confirmed the config from Wednesday is present but has no postrotate block
+   and uses create 0640 (which breaks kk-api write access after rotation).
+   Script handling (Phase 7): full overwrite of /etc/logrotate.d/kijanikiosk
+   Log line: "Incomplete logrotate: missing postrotate in /etc/logrotate.d/kijanikiosk"
+
+ADDITIONAL OBSERVATIONS (not in the required six, documented for completeness):
+
+- kk-logs user does NOT exist yet — will be created fresh in Phase 2
+- nginx is on apt-mark hold (from Wednesday's script) — Phase 4 respects this
+- kk-payments.service exists but is DISABLED — Phase 6 will overwrite and enable
+- kk-api.service exists and is enabled — Phase 6 will overwrite with hardened version
+- Journal is using volatile storage (312 MB in RAM-backed journals) — Phase 7 enables persistent storage
+- /opt/kijanikiosk/health/ does not exist — will be created in Phase 8
+
+================================================================================
+END OF AUDIT
+================================================================================
