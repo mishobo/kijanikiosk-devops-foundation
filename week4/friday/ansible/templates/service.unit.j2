@@ -1,0 +1,56 @@
+[Unit]
+Description=KijaniKiosk {{ service_name }} Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User={{ service_name }}
+Group={{ service_group }}
+WorkingDirectory={{ base_dir }}/{{ service_name }}
+# Under {{ base_dir }}, not /etc - ProtectSystem=strict below makes /etc
+# read-only for this service, but does not affect /opt.
+EnvironmentFile={{ base_dir }}/config/{{ service_name }}.env
+# Placeholder ExecStart: no application code is deployed at this stage
+# (Week 3's script noted the same - services are configured but not running
+# real app code yet). python3's stdlib http.server keeps the unit startable
+# and genuinely running so the idempotency proof is against a real service.
+ExecStart=/usr/bin/python3 -m http.server {{ service_port }} --bind 127.0.0.1 --directory {{ base_dir }}/{{ service_name }}
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ base_dir }}/{{ service_name }} {{ log_dir }}
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_UNIX
+RestrictSUIDSGID=true
+RemoveIPC=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectClock=true
+UMask=0027
+{% if extra_hardening | default(false) %}
+# Additional directives (payments-specific, see hardening-decisions.md):
+# financial transaction data warrants network isolation beyond the baseline.
+IPAddressDeny=any
+IPAddressAllow=localhost 10.0.0.0/8
+DevicePolicy=closed
+SecureBits=no-setuid-fixup-locked noroot noroot-locked
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target
