@@ -1,0 +1,7 @@
+---
+service_name: kk-payments
+service_port: 3001
+# Payments handles financial transaction data - carries the Week 3 systemd
+# hardening directives that got kk-payments below the 2.5 security score
+# target. See hardening-decisions.md for the score and reasoning.
+extra_hardening: true

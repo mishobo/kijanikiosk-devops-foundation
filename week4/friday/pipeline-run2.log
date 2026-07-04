@@ -1,0 +1,173 @@
+=== Checking AWS credentials ===
+=== Terraform: init + apply ===
+[0m[1mInitializing modules...[0m
+[0m[1mInitializing provider plugins found in the configuration...[0m
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Using previously-installed hashicorp/aws v5.100.0
+
+[0m[1mInitializing the backend...[0m
+
+[0m[1mInitializing provider plugins found in the state...[0m
+- Reusing previous version of hashicorp/aws
+- Using previously-installed hashicorp/aws v5.100.0
+
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+[0m[32m
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.[0m
+[0m[1mdata.aws_vpc.default: Reading...[0m[0m
+[0m[1mdata.aws_ami.ubuntu: Reading...[0m[0m
+[0m[1mdata.aws_ami.ubuntu: Read complete after 2s [id=ami-0a9723306502e2558][0m
+[0m[1mdata.aws_vpc.default: Read complete after 3s [id=vpc-05ced69c76f137754][0m
+[0m[1mmodule.app_servers["api"].aws_security_group.app: Refreshing state... [id=sg-06b0245fdb5e7823b][0m
+[0m[1mmodule.app_servers["payments"].aws_security_group.app: Refreshing state... [id=sg-0201d9e9b282130ba][0m
+[0m[1mmodule.app_servers["logs"].aws_security_group.app: Refreshing state... [id=sg-07276628e1aeac949][0m
+[0m[1mmodule.app_servers["logs"].aws_instance.this: Refreshing state... [id=i-04f26b8121b3256cd][0m
+[0m[1mmodule.app_servers["payments"].aws_instance.this: Refreshing state... [id=i-00fd5a5e276751845][0m
+[0m[1mmodule.app_servers["api"].aws_instance.this: Refreshing state... [id=i-0d72c7af76810d8b9][0m
+
+[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m
+
+[0mTerraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+Releasing state lock. This may take a few moments...
+[0m[1m[32m
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0mapi_server_ip = "65.1.148.189"
+logs_server_ip = "43.204.231.16"
+payments_server_ip = "3.110.135.210"
+server_instance_ids = {
+  "api" = "i-0d72c7af76810d8b9"
+  "logs" = "i-04f26b8121b3256cd"
+  "payments" = "i-00fd5a5e276751845"
+}
+server_public_ips = {
+  "api" = "65.1.148.189"
+  "logs" = "43.204.231.16"
+  "payments" = "3.110.135.210"
+}
+ssh_commands = {
+  "api" = "ssh -i ~/.ssh/aws-moringa.pem ubuntu@65.1.148.189"
+  "logs" = "ssh -i ~/.ssh/aws-moringa.pem ubuntu@43.204.231.16"
+  "payments" = "ssh -i ~/.ssh/aws-moringa.pem ubuntu@3.110.135.210"
+}
+=== Extracting server IPs from Terraform outputs ===
+api-staging=65.1.148.189  payments-staging=3.110.135.210  logs-staging=43.204.231.16
+=== Writing ansible/inventory.ini ===
+=== Waiting for SSH to come up ===
+=== Ansible: configure all three servers ===
+
+PLAY [Configure KijaniKiosk servers] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'payments-staging' is using the discovered Python interpreter at '/usr/bin/python3.10', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'logs-staging' is using the discovered Python interpreter at '/usr/bin/python3.10', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'api-staging' is using the discovered Python interpreter at '/usr/bin/python3.10', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Gather current service facts] ********************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Update apt cache] ********************************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Install required packages] ***********************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Create kijanikiosk system group] *****************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Create service account] **************************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Create application directory tree] ***************************************
+ok: [payments-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+ok: [logs-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+ok: [api-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+ok: [payments-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+ok: [logs-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+ok: [api-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+ok: [payments-staging] => (item={'path': '/opt/kijanikiosk/kk-payments', 'owner': 'kk-payments', 'mode': '0750'})
+ok: [logs-staging] => (item={'path': '/opt/kijanikiosk/kk-logs', 'owner': 'kk-logs', 'mode': '0750'})
+ok: [api-staging] => (item={'path': '/opt/kijanikiosk/kk-api', 'owner': 'kk-api', 'mode': '0750'})
+ok: [payments-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-payments', 'mode': '02750'})
+ok: [logs-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-logs', 'mode': '02750'})
+ok: [api-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-api', 'mode': '02750'})
+
+TASK [Deploy service environment file] *****************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Deploy systemd unit file] ************************************************
+ok: [logs-staging]
+ok: [payments-staging]
+ok: [api-staging]
+
+TASK [Enable service] **********************************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Set ufw default deny incoming] *******************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Allow SSH] ***************************************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Allow service port] ******************************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Create persistent journal directory] *************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Create journald conf.d directory] ****************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Deploy persistent journald configuration] ********************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Deploy logrotate configuration] ******************************************
+ok: [api-staging]
+ok: [payments-staging]
+ok: [logs-staging]
+
+PLAY RECAP *********************************************************************
+api-staging                : ok=17   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+logs-staging               : ok=17   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+payments-staging           : ok=17   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+=== Pipeline complete ===

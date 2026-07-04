@@ -1,0 +1,12 @@
+---
+service_group: kijanikiosk
+base_dir: /opt/kijanikiosk
+log_dir: /opt/kijanikiosk/shared/logs
+
+# Must match the key pair Terraform's ssh_key_name variable refers to
+# (terraform/terraform.tfvars: ssh_key_name = "aws-moringa").
+ansible_user: ubuntu
+ansible_ssh_private_key_file: ~/.ssh/aws-moringa.pem
+
+# Overridden to true in host_vars/payments-staging.yml only.
+extra_hardening: false

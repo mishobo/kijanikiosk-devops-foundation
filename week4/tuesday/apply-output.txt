@@ -1,0 +1,46 @@
+[0m[1maws_security_group.kk_api: Creating...[0m[0m
+[0m[1maws_security_group.kk_api: Creation complete after 5s [id=sg-08fb279d9c27881c0][0m
+[0m[1maws_instance.kk_api: Creating...[0m[0m
+[0m[1maws_instance.kk_api: Still creating... [00m10s elapsed][0m[0m
+[0m[1maws_instance.kk_api: Creation complete after 15s [id=i-0b1893828f5aad3ab][0m
+[0m[1mnull_resource.kijanikiosk_api: Creating...[0m[0m
+[0m[1mnull_resource.kijanikiosk_api: Provisioning with 'remote-exec'...[0m[0m
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0mConnecting to remote host via SSH...
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Host: 35.154.213.255
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  User: ubuntu
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Password: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Private key: true
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Certificate: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  SSH Agent: true
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Checking Host Key: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Target Platform: unix
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0mConnecting to remote host via SSH...
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Host: 35.154.213.255
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  User: ubuntu
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Password: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Private key: true
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Certificate: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  SSH Agent: true
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Checking Host Key: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Target Platform: unix
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0mConnecting to remote host via SSH...
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Host: 35.154.213.255
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  User: ubuntu
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Password: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Private key: true
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Certificate: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  SSH Agent: true
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Checking Host Key: false
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0m  Target Platform: unix
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0mConnected!
+[0m[1mnull_resource.kijanikiosk_api: Still creating... [00m10s elapsed][0m[0m
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0mConnected to kijanikiosk-api (staging)
+[0m[1mnull_resource.kijanikiosk_api (remote-exec):[0m [0mLinux ip-172-31-15-184 7.0.0-1008-aws #8-Ubuntu SMP PREEMPT Fri Jun 19 00:15:35 UTC 2026 x86_64 GNU/Linux
+[0m[1mnull_resource.kijanikiosk_api: Creation complete after 12s [id=111979101596607443][0m
+[0m[1m[32m
+Apply complete! Resources: 3 added, 0 changed, 0 destroyed.[0m
+[0m[1m[32m
+Outputs:
+
+[0mapi_server_public_ip = "35.154.213.255"
+ssh_command = "ssh -i ~/.ssh/aws-moringa.pem ubuntu@35.154.213.255"

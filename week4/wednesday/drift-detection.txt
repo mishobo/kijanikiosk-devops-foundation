@@ -1,0 +1,70 @@
+LAB NOTES (Phase 4 - drift detection):
+
+Change made (out-of-band, not via Terraform):
+    aws ec2 create-tags --region ap-south-1 --resources i-04d2b80b7e2b9afce \
+      --tags Key=Environment,Value=drift-test-manual-change
+  This retagged the "payments" instance's Environment tag directly through the AWS API,
+  bypassing Terraform entirely (simulating someone hand-editing a resource in the console/CLI).
+
+Did Terraform detect the drift?
+  Yes. `terraform plan` refreshed state from the real AWS API during planning and found the
+  live Environment tag ("drift-test-manual-change") no longer matched the value declared in
+  config (var.environment = "staging"). It proposed a single in-place update:
+  "Environment" = "drift-test-manual-change" -> "staging", with 0 resources added/destroyed.
+  Plan: 0 to add, 1 to change, 0 to destroy.
+
+Remediation decision: restore the declared state (terraform apply), not update the config.
+  Reasoning: the change was made directly against the AWS API, outside of version control and
+  outside code review - it does not represent an intentional, agreed-upon infrastructure
+  decision. Updating the .tf config to match every manual change would defeat the purpose of
+  IaC: the repo would stop being the source of truth, and any engineer (or script) with console
+  access could silently redefine "correct" state. Applying the existing plan re-asserts the
+  config as ground truth and closes the drift. (The other remediation path - updating the
+  config to accept a change - is appropriate only when the manual change reflects a real,
+  reviewed requirement, e.g. an emergency hotfix that should be formalized into code afterward.)
+
+Action taken: ran `terraform apply -auto-approve` immediately after this plan to remediate the
+drift and return the payments instance's Environment tag to "staging" before proceeding to
+Phase 5 (state stays clean going into the backend migration).
+
+[0m[1mdata.aws_vpc.default: Reading...[0m[0m
+[0m[1mdata.aws_ami.ubuntu: Reading...[0m[0m
+[0m[1mdata.aws_ami.ubuntu: Read complete after 2s [id=ami-08665958117a3e86a][0m
+[0m[1mdata.aws_vpc.default: Read complete after 3s [id=vpc-05ced69c76f137754][0m
+[0m[1mmodule.app_servers["api"].aws_security_group.app: Refreshing state... [id=sg-0cfb3d81c6e3a7840][0m
+[0m[1mmodule.app_servers["payments"].aws_security_group.app: Refreshing state... [id=sg-02e1d902ea5221be0][0m
+[0m[1mmodule.app_servers["logs"].aws_security_group.app: Refreshing state... [id=sg-0b816aa902ec40387][0m
+[0m[1mmodule.app_servers["logs"].aws_instance.this: Refreshing state... [id=i-0a1d76db2b8368b40][0m
+[0m[1mmodule.app_servers["payments"].aws_instance.this: Refreshing state... [id=i-04d2b80b7e2b9afce][0m
+[0m[1mmodule.app_servers["api"].aws_instance.this: Refreshing state... [id=i-0dddfe8736a068104][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [33m~[0m update in-place[0m
+
+Terraform will perform the following actions:
+
+[1m  # module.app_servers["payments"].aws_instance.this[0m will be updated in-place
+[0m  [33m~[0m[0m resource "aws_instance" "this" {
+        id                                   = "i-04d2b80b7e2b9afce"
+      [33m~[0m[0m tags                                 = {
+          [33m~[0m[0m "Environment" = "drift-test-manual-change" [33m->[0m[0m "staging"
+            "ManagedBy"   = "terraform"
+            "Name"        = "kijanikiosk-payments-staging"
+            "Service"     = "payments"
+        }
+      [33m~[0m[0m tags_all                             = {
+          [33m~[0m[0m "Environment" = "drift-test-manual-change" [33m->[0m[0m "staging"
+            [90m# (3 unchanged elements hidden)[0m[0m
+        }
+        [90m# (38 unchanged attributes hidden)[0m[0m
+
+        [90m# (8 unchanged blocks hidden)[0m[0m
+    }
+
+[1mPlan:[0m [0m0 to add, 1 to change, 0 to destroy.
+[90m
+─────────────────────────────────────────────────────────────────────────────[0m
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
