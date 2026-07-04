@@ -1,0 +1,118 @@
+LAB NOTES (Phase 4 - idempotency proof):
+
+Run 1 (apply-run1.txt) PLAY RECAP: all three hosts changed=15, skipped=1 (the
+"Restart service" handler, correctly skipped on this first-ever run since the
+service didn't exist yet when service_facts was gathered - "Enable service"
+handled the initial start instead).
+
+Run 2 (this file) PLAY RECAP: all three hosts changed=0, ok=16. No handlers
+ran at all (checked: zero "RUNNING HANDLER" lines in this output), because
+every task that could notify a handler reported "ok" (unchanged) rather than
+"changed". This is the idempotency proof the lab requires.
+
+Verified independently of the "changed=0" count that the configuration is
+functionally correct, not just quiescent:
+  - systemctl is-active / is-enabled: all three services active + enabled
+  - curl to 127.0.0.1:<service_port>: HTTP 200 on all three hosts
+  - ufw: default deny incoming, SSH allowed, service port allowed on loopback only
+
+
+PLAY [Configure KijaniKiosk servers] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'logs-staging' is using the discovered Python interpreter at '/usr/bin/python3.14', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'api-staging' is using the discovered Python interpreter at '/usr/bin/python3.14', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'payments-staging' is using the discovered Python interpreter at '/usr/bin/python3.14', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+ok: [logs-staging]
+ok: [api-staging]
+ok: [payments-staging]
+
+TASK [Gather current service facts] ********************************************
+ok: [logs-staging]
+ok: [payments-staging]
+ok: [api-staging]
+
+TASK [Update apt cache] ********************************************************
+ok: [logs-staging]
+ok: [payments-staging]
+ok: [api-staging]
+
+TASK [Install required packages] ***********************************************
+ok: [logs-staging]
+ok: [payments-staging]
+ok: [api-staging]
+
+TASK [Create kijanikiosk system group] *****************************************
+ok: [logs-staging]
+ok: [api-staging]
+ok: [payments-staging]
+
+TASK [Create service account] **************************************************
+ok: [api-staging]
+ok: [payments-staging]
+ok: [logs-staging]
+
+TASK [Create application directory tree] ***************************************
+ok: [logs-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+ok: [payments-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+ok: [api-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+ok: [logs-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+ok: [payments-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+ok: [api-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+ok: [logs-staging] => (item={'path': '/opt/kijanikiosk/kk-logs', 'owner': 'kk-logs', 'mode': '0750'})
+ok: [payments-staging] => (item={'path': '/opt/kijanikiosk/kk-payments', 'owner': 'kk-payments', 'mode': '0750'})
+ok: [api-staging] => (item={'path': '/opt/kijanikiosk/kk-api', 'owner': 'kk-api', 'mode': '0750'})
+ok: [logs-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-logs', 'mode': '02750'})
+ok: [payments-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-payments', 'mode': '02750'})
+ok: [api-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-api', 'mode': '02750'})
+
+TASK [Deploy systemd unit file] ************************************************
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Enable service] **********************************************************
+ok: [logs-staging]
+ok: [payments-staging]
+ok: [api-staging]
+
+TASK [Set ufw default deny incoming] *******************************************
+ok: [logs-staging]
+ok: [api-staging]
+ok: [payments-staging]
+
+TASK [Allow SSH] ***************************************************************
+ok: [logs-staging]
+ok: [payments-staging]
+ok: [api-staging]
+
+TASK [Allow service port] ******************************************************
+ok: [logs-staging]
+ok: [api-staging]
+ok: [payments-staging]
+
+TASK [Create persistent journal directory] *************************************
+ok: [logs-staging]
+ok: [api-staging]
+ok: [payments-staging]
+
+TASK [Create journald conf.d directory] ****************************************
+ok: [api-staging]
+ok: [logs-staging]
+ok: [payments-staging]
+
+TASK [Deploy persistent journald configuration] ********************************
+ok: [logs-staging]
+ok: [api-staging]
+ok: [payments-staging]
+
+TASK [Deploy logrotate configuration] ******************************************
+ok: [logs-staging]
+ok: [api-staging]
+ok: [payments-staging]
+
+PLAY RECAP *********************************************************************
+api-staging                : ok=16   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+logs-staging               : ok=16   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+payments-staging           : ok=16   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

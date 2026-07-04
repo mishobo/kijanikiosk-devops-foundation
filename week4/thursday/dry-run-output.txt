@@ -1,0 +1,115 @@
+LAB NOTES (Phase 3 - dry run):
+
+Expected changed count per host (from --check output below): 6 changed tasks per host
+(Install packages, Create group, Create user, Create directory tree x4 items collapsed
+per-host into the loop, Deploy systemd unit file) before the run hits "Enable service".
+
+Known --check-mode limitation (not a real failure):
+  The "Enable service" task fails under --check with "Could not find the requested
+  service kk-<name>.service: host". This happens because ansible.builtin.systemd does
+  not support check mode for querying/managing a real unit - in --check, the preceding
+  "Deploy systemd unit file" template task is only *simulated* (reported as would-be
+  changed) and never actually writes /etc/systemd/system/kk-<name>.service to disk. So
+  when "Enable service" tries to query systemd about a unit that doesn't really exist
+  yet in this check-mode run, it correctly reports "Could not find the requested
+  service". This is documented Ansible behavior: most service/systemd modules cannot
+  be meaningfully dry-run when the unit they manage is created earlier in the same
+  play. It is not evidence of a bug in the playbook.
+  Confirmed by running the real (non-check) apply immediately after: Phase 4's
+  apply-run1.txt shows the same unit files being created and then successfully
+  enabled/started with no errors, proving the --check failure was purely a tooling
+  limitation and not a defect that needed fixing before applying.
+
+
+PLAY [Configure KijaniKiosk servers] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'payments-staging' is using the discovered Python interpreter at '/usr/bin/python3.14', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'logs-staging' is using the discovered Python interpreter at '/usr/bin/python3.14', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'api-staging' is using the discovered Python interpreter at '/usr/bin/python3.14', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.21/reference_appendices/interpreter_discovery.html for more information.
+ok: [payments-staging]
+ok: [logs-staging]
+ok: [api-staging]
+
+TASK [Gather current service facts] ********************************************
+ok: [payments-staging]
+ok: [api-staging]
+ok: [logs-staging]
+
+TASK [Update apt cache] ********************************************************
+changed: [logs-staging]
+changed: [payments-staging]
+changed: [api-staging]
+
+TASK [Install required packages] ***********************************************
+changed: [logs-staging]
+changed: [payments-staging]
+changed: [api-staging]
+
+TASK [Create kijanikiosk system group] *****************************************
+changed: [payments-staging]
+changed: [api-staging]
+changed: [logs-staging]
+
+TASK [Create service account] **************************************************
+changed: [payments-staging]
+changed: [api-staging]
+changed: [logs-staging]
+
+TASK [Create application directory tree] ***************************************
+[WARNING]: failed to look up group kijanikiosk. Create group up to this point in real play
+[WARNING]: failed to look up user kk-logs. Create user up to this point in real play
+[WARNING]: failed to look up user kk-api. Create user up to this point in real play
+[WARNING]: failed to look up user kk-payments. Create user up to this point in real play
+changed: [api-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+changed: [logs-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+changed: [payments-staging] => (item={'path': '/opt/kijanikiosk', 'owner': 'root', 'mode': '0755'})
+changed: [logs-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+changed: [payments-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+changed: [api-staging] => (item={'path': '/opt/kijanikiosk/config', 'owner': 'root', 'mode': '0750'})
+changed: [logs-staging] => (item={'path': '/opt/kijanikiosk/kk-logs', 'owner': 'kk-logs', 'mode': '0750'})
+changed: [api-staging] => (item={'path': '/opt/kijanikiosk/kk-api', 'owner': 'kk-api', 'mode': '0750'})
+changed: [payments-staging] => (item={'path': '/opt/kijanikiosk/kk-payments', 'owner': 'kk-payments', 'mode': '0750'})
+changed: [payments-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-payments', 'mode': '02750'})
+changed: [logs-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-logs', 'mode': '02750'})
+changed: [api-staging] => (item={'path': '/opt/kijanikiosk/shared/logs', 'owner': 'kk-api', 'mode': '02750'})
+
+TASK [Deploy systemd unit file] ************************************************
+changed: [payments-staging]
+changed: [logs-staging]
+changed: [api-staging]
+
+TASK [Enable service] **********************************************************
+[ERROR]: Task failed: Module failed: Could not find the requested service kk-api.service: host
+Origin: /Users/mac/Documents/projects/DevOps - Moringa schools/kijanikiosk-devops-foundation/week4/thursday/kijanikiosk.yml:90:7
+
+88         - Restart service
+89
+90     - name: Enable service
+         ^ column 7
+
+fatal: [api-staging]: FAILED! => {"changed": false, "msg": "Could not find the requested service kk-api.service: host"}
+[ERROR]: Task failed: Module failed: Could not find the requested service kk-logs.service: host
+Origin: /Users/mac/Documents/projects/DevOps - Moringa schools/kijanikiosk-devops-foundation/week4/thursday/kijanikiosk.yml:90:7
+
+88         - Restart service
+89
+90     - name: Enable service
+         ^ column 7
+
+fatal: [logs-staging]: FAILED! => {"changed": false, "msg": "Could not find the requested service kk-logs.service: host"}
+[ERROR]: Task failed: Module failed: Could not find the requested service kk-payments.service: host
+Origin: /Users/mac/Documents/projects/DevOps - Moringa schools/kijanikiosk-devops-foundation/week4/thursday/kijanikiosk.yml:90:7
+
+88         - Restart service
+89
+90     - name: Enable service
+         ^ column 7
+
+fatal: [payments-staging]: FAILED! => {"changed": false, "msg": "Could not find the requested service kk-payments.service: host"}
+
+PLAY RECAP *********************************************************************
+api-staging                : ok=8    changed=6    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+logs-staging               : ok=8    changed=6    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+payments-staging           : ok=8    changed=6    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+

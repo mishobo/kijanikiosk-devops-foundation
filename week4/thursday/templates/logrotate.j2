@@ -1,0 +1,13 @@
+{{ log_dir }}/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    sharedscripts
+    create 0640 {{ service_name }} {{ service_group }}
+    postrotate
+        systemctl reload {{ service_name }}.service 2>/dev/null || true
+    endscript
+}
