@@ -1,0 +1,17 @@
+PLACEHOLDER — replace this entire file with the real Jenkins console output.
+
+Run the pipeline on the Week 4 VM (Jenkins + Nexus + Docker agent), then from
+the build's Console Output page copy the full log here. Before submitting,
+confirm the pasted log actually shows all of the following (per Phase 2):
+
+  [ ] Docker image pull line shows "node:18-alpine", not "latest"
+  [ ] "Lint" stage timestamp completes before "Build" stage starts
+  [ ] "Test" and "Security Audit" timestamps overlap (parallel, not sequential)
+  [ ] ARTIFACT_VERSION string (e.g. 1.0.0-a3f2c8b) appears in the Publish stage output
+  [ ] npm publish output confirms the package + version were published
+  [ ] "success" post block prints the artifact version and Nexus URL
+  [ ] NEXUS_USER / NEXUS_PASS values appear as **** wherever printed, never in plaintext
+  [ ] "Finished: SUCCESS" and workspace cleanup from cleanWs() at the end
+  [ ] Total build time from the stage view is under 10 minutes — note it here:
+
+Total build time: ____

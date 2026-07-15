@@ -1,0 +1,21 @@
+PLACEHOLDER — replace this entire file with the real Jenkins console output
+from the final successful run of week5/friday/Jenkinsfile.
+
+Before submitting, confirm the pasted log shows all of the following:
+
+  [ ] Docker image pull line shows "node:18-alpine", not "latest"
+  [ ] "Lint" stage timestamp completes before "Build" stage starts
+  [ ] "Test" and "Security Audit" timestamps overlap (parallel, not sequential)
+  [ ] ARTIFACT_VERSION string (e.g. 1.2.0-a3f2c8b) appears in the Publish stage output
+  [ ] npm publish output confirms the package + version were published
+  [ ] "success" post block prints the artifact version and Nexus URL
+  [ ] NEXUS_USER / NEXUS_PASS values appear as **** wherever printed, never in plaintext
+  [ ] "changed" post block fires if this run's result differs from the previous run
+  [ ] "Finished: SUCCESS" and workspace cleanup from cleanWs() at the end
+  [ ] Total elapsed time from trigger to final post block is under 10 minutes
+
+Total build time: ____
+
+Note: this must be the SECOND (or later) successful run against a different
+commit than the first, so Nexus ends up holding at least two distinct
+<semver>-<git-sha> versions for the nexus-versions-screenshot.png deliverable.
