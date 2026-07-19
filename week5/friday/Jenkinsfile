@@ -1,0 +1,129 @@
+pipeline {
+    agent {
+        docker {
+            image 'node:18-alpine'
+            args  '-v /tmp:/tmp --network=host'
+        }
+    }
+
+    environment {
+        NODE_ENV  = 'test'
+        BUILD_DIR = 'dist'
+        APP_NAME  = 'kijanikiosk-payments'
+
+        PKG_VERSION      = sh(script: "node -p \"require('./package.json').version\"", returnStdout: true).trim()
+        GIT_SHORT        = sh(script: "apk add --no-cache git >/dev/null 2>&1; git rev-parse --short HEAD", returnStdout: true).trim()
+        ARTIFACT_VERSION = "${PKG_VERSION}-${GIT_SHORT}"
+        // Agent runs with --network=host, so the container shares the VM's
+        // network namespace. Use 127.0.0.1 (not localhost) because Node 18
+        // resolves "localhost" to the IPv6 loopback (::1) first, and Docker's
+        // published port only binds the IPv4 wildcard, causing ECONNREFUSED.
+        NEXUS_URL        = "http://127.0.0.1:8081/repository/npm-kijanikiosk"
+    }
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Lint') {
+            steps {
+                retry(2) {
+                    sh 'npm ci'
+                }
+                sh 'npm run lint'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+                sh '''
+                    if [ ! -d "$BUILD_DIR" ] || [ -z "$(ls -A "$BUILD_DIR")" ]; then
+                        echo "Build output directory $BUILD_DIR not found or empty"
+                        exit 1
+                    fi
+                    echo "Build output file count: $(ls "$BUILD_DIR" | wc -l)"
+                '''
+                stash name: 'build-output', includes: "${BUILD_DIR}/**"
+            }
+        }
+
+        stage('Verify') {
+            parallel {
+                stage('Test') {
+                    steps {
+                        unstash 'build-output'
+                        sh '''
+                            set -e
+                            npm test
+                        '''
+                    }
+                    post {
+                        always {
+                            junit allowEmptyResults: true, testResults: 'test-results/*.xml'
+                        }
+                    }
+                }
+                stage('Security Audit') {
+                    steps {
+                        sh 'npm audit --audit-level=high'
+                    }
+                }
+            }
+        }
+
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: "${BUILD_DIR}/**",
+                                 fingerprint: true,
+                                 onlyIfSuccessful: true
+            }
+        }
+
+        stage('Publish') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'nexus-credentials',
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh '''
+                        set -e
+                        trap "rm -f .npmrc" EXIT
+
+                        NEXUS_TOKEN=$(printf "%s:%s" "$NEXUS_USER" "$NEXUS_PASS" | base64 | tr -d '\\n')
+                        NEXUS_HOST=$(echo "$NEXUS_URL" | sed -E 's#^https?://##')
+
+                        cat > .npmrc <<EOF
+registry=$NEXUS_URL/
+//$NEXUS_HOST/:_auth=$NEXUS_TOKEN
+always-auth=true
+EOF
+
+                        npm version "$ARTIFACT_VERSION" --no-git-tag-version --allow-same-version
+                        npm publish
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Published ${APP_NAME} version ${ARTIFACT_VERSION} to Nexus"
+            echo "Artifact URL: ${NEXUS_URL}/kijanikiosk-payments/-/kijanikiosk-payments-${ARTIFACT_VERSION}.tgz"
+        }
+        failure {
+            echo "Pipeline FAILED at build ${BUILD_NUMBER} - check logs at ${BUILD_URL}"
+        }
+        changed {
+            echo "Build status changed to ${currentBuild.currentResult} - ${JOB_NAME} #${BUILD_NUMBER}"
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
