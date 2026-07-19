@@ -15,31 +15,28 @@ the next row.
 ## Notes per fault
 
 ### Lint fault
-- Fault: <describe exact change, e.g. file/line>
-- Build number: <#>
-- What happened:
+- Fault: `src/payments.js` — removed the closing `}` of `calculateTotal`, producing an unclosed block (commit `e48c124`).
+- Build number: #9 (fault) / #10 (revert, confirmed green)
+- What happened: ESLint failed to parse the file — `15:1 error Parsing error: Unexpected token`. Build, Verify (both Test and Security Audit branches), Archive, and Publish all logged `Stage "<name>" skipped due to earlier failure(s)`. Pipeline result: FAILURE.
 
 ### Build fault
-- Fault: <describe exact change>
-- Build number: <#>
-- What happened:
+- Fault: `package.json` — changed the `build` script from `node scripts/build.js` to `node scripts/build-missing.js`, a nonexistent file (commit `59d5690`).
+- Build number: #11 (fault) / #12 (revert, confirmed green)
+- What happened: Lint passed. `npm run build` exited with `Error: Cannot find module '.../scripts/build-missing.js'`, `code: 'MODULE_NOT_FOUND'`. Verify, Archive, and Publish all skipped ("Stage ... skipped due to earlier failure(s)"). Pipeline result: FAILURE.
 
 ### Test fault (inside Verify)
-- Fault: <describe exact change>
-- Build number: <#>
-- What happened:
-- Confirm the Security Audit branch's timestamp range in the log to show it ran to completion despite Test failing.
+- Fault: `test/payments.test.js` — changed the expected value in `calculateTotal sums price * quantity across items` from `35` to `999999` (commit `900cb5e`).
+- Build number: #14 (fault) / #15 (revert, confirmed green)
+- What happened: Lint and Build passed. Inside Verify, the Test branch reported `not ok 1 - calculateTotal sums price * quantity across items` (`35 !== 999999`, `# pass 3 / # fail 1`), while the Security Audit branch independently logged `found 0 vulnerabilities` immediately after `Failed in branch Test` in the console — proving it ran to completion despite Test failing. Verify overall failed; Archive and Publish skipped. Pipeline result: FAILURE.
 
 ### Security Audit fault (inside Verify)
-- Fault: <package + version pinned, and which CVE/severity it corresponds to>
-- Build number: <#>
-- What happened:
-- Confirm the Test branch's timestamp range in the log to show it ran to completion despite the audit failing.
+- Fault: `package.json` — added `"dependencies": { "minimist": "0.0.8" }`, a version with a known **critical** prototype-pollution vulnerability (GHSA-vh95-rmgr-6w4m / GHSA-xvch-5gv4-984h), well above the `--audit-level=high` threshold (commit `40804a6`).
+- Build number: #16 (fault) / #17 (revert, confirmed green)
+- What happened: Lint and Build passed. Inside Verify, the Test branch completed fully first — `# tests 4 / # pass 4 / # fail 0` logged before `Failed in branch Security Audit` appears — proving Test ran to completion independently despite the audit failing. `npm audit --audit-level=high` reported `1 critical severity vulnerability` for minimist and exited non-zero. Verify overall failed; Archive and Publish skipped. Pipeline result: FAILURE.
 
 ### Publish fault
-- Fault: <describe exact change, e.g. `credentialsId: 'wrong-id'`>
-- Build number: <#>
-- What happened:
-- Confirm: Archive stage succeeded (artifact visible under the Jenkins build's "Artifacts" tab), but a `curl` against the Nexus search API for that version returns nothing.
+- Fault: `Jenkinsfile` — changed `credentialsId: 'nexus-credentials'` to `credentialsId: 'wrong-id'` in the Publish stage's `withCredentials` block (commit `f4a9e03`).
+- Build number: #18 (fault) / #19 (revert, confirmed green)
+- What happened: Lint, Build, Verify all passed. Archive succeeded and fingerprinted the artifact (visible under build #18's "Artifacts" tab in Jenkins). Publish failed immediately with `ERROR: Could not find credentials entry with ID 'wrong-id'`, before `npm publish` ran. Confirmed via Nexus REST search (`GET /service/rest/v1/search?repository=npm-kijanikiosk&name=kijanikiosk-payments&version=0.1.0-f4a9e03`) that no artifact for that version was published (`"items": []`). Pipeline result: FAILURE.
 
-All faults reverted; pipeline confirmed green again after each row (see build numbers above).
+All faults reverted; pipeline confirmed green again after each row — build numbers #10, #12, #15, #17, #19.
