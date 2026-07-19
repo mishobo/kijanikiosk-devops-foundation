@@ -96,10 +96,10 @@ pipeline {
                         NEXUS_HOST=$(echo "$NEXUS_URL" | sed -E 's#^https?://##')
 
                         cat > .npmrc <<EOF
-registry=$NEXUS_URL/
-//$NEXUS_HOST/:_auth=$NEXUS_TOKEN
-always-auth=true
-EOF
+                            registry=$NEXUS_URL/
+                            //$NEXUS_HOST/:_auth=$NEXUS_TOKEN
+                            always-auth=true
+                            EOF
 
                         npm version "$ARTIFACT_VERSION" --no-git-tag-version --allow-same-version
                         npm publish
