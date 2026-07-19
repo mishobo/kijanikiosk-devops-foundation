@@ -15,8 +15,10 @@ pipeline {
         GIT_SHORT        = sh(script: "apk add --no-cache git >/dev/null 2>&1; git rev-parse --short HEAD", returnStdout: true).trim()
         ARTIFACT_VERSION = "${PKG_VERSION}-${GIT_SHORT}"
         // Agent runs with --network=host, so the container shares the VM's
-        // network namespace and localhost correctly reaches Nexus on the host.
-        NEXUS_URL        = "http://localhost:8081/repository/npm-kijanikiosk"
+        // network namespace. Use 127.0.0.1 (not localhost) because Node 18
+        // resolves "localhost" to the IPv6 loopback (::1) first, and Docker's
+        // published port only binds the IPv4 wildcard, causing ECONNREFUSED.
+        NEXUS_URL        = "http://127.0.0.1:8081/repository/npm-kijanikiosk"
     }
 
     options {
@@ -96,10 +98,10 @@ pipeline {
                         NEXUS_HOST=$(echo "$NEXUS_URL" | sed -E 's#^https?://##')
 
                         cat > .npmrc <<EOF
-                            registry=$NEXUS_URL/
-                            //$NEXUS_HOST/:_auth=$NEXUS_TOKEN
-                            always-auth=true
-                            EOF
+registry=$NEXUS_URL/
+//$NEXUS_HOST/:_auth=$NEXUS_TOKEN
+always-auth=true
+EOF
 
                         npm version "$ARTIFACT_VERSION" --no-git-tag-version --allow-same-version
                         npm publish
