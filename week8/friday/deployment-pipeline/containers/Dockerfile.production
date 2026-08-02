@@ -1,0 +1,34 @@
+# kk-payments production image — multi-stage build.
+# Stage 1 compiles/builds with the full toolchain; stage 2 ships only the
+# runtime, a minimal Alpine base with node and the built dist/ tree,
+# running as the non-root kijani user.
+FROM node:20-alpine AS builder
+WORKDIR /build
+COPY package.json ./
+COPY scripts/ scripts/
+COPY src/ src/
+# Build step: produces dist/ from src/. Dev tooling (eslint, any compiler)
+# lives only in this stage and never reaches the final image.
+RUN node scripts/build.js
+
+FROM alpine:3.20
+# Runtime-only node (no npm, no build tools) keeps the image well under 100MB.
+RUN apk add --no-cache nodejs && \
+    addgroup -S kijani && adduser -S -G kijani kijani
+
+WORKDIR /app
+COPY --from=builder --chown=kijani:kijani /build/dist ./dist
+COPY --from=builder --chown=kijani:kijani /build/package.json ./package.json
+
+USER kijani
+ENV NODE_ENV=production \
+    PORT=3001
+EXPOSE 3001
+
+# --start-period=30s: the service initialises quickly today, but 30s covers a
+# realistic connection-pool warm-up without marking a normal startup unhealthy
+# (see integration challenge E).
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/health || exit 1
+
+CMD ["node", "dist/server.js"]

@@ -1,0 +1,15 @@
+{
+  "name": "kijanikiosk-payments",
+  "version": "0.1.0",
+  "description": "Kijani Kiosk payments service",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "start": "node dist/server.js",
+    "test": "node --test test/"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=KijaniKiosk artifact server (serves versioned release tarballs)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m http.server 8080 --directory /opt/kijanikiosk/artifacts
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

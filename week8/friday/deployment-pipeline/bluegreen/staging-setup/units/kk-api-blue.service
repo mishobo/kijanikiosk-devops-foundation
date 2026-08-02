@@ -1,0 +1,13 @@
+[Unit]
+Description=KijaniKiosk payments API (blue environment)
+After=network.target
+
+[Service]
+Type=simple
+User=kijani
+EnvironmentFile=/opt/kijanikiosk/releases/blue/env
+ExecStart=/usr/bin/node /opt/kijanikiosk/releases/blue/current/dist/server.js
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
