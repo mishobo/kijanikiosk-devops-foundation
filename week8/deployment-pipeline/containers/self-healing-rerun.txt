@@ -1,0 +1,28 @@
+=== Requirement 8 (self-healing): fresh rerun from today's deployment ===
+Date: 2026-08-02T21:47:49Z. Image tag: 0.1.0-2e3e50e. All timestamps UTC.
+
+Pods before deletion:
+  kk-payments-68776794bb-8r644   1/1  Running
+  kk-payments-68776794bb-cnskd   1/1  Running
+
+T0 = 21:47:45  deleted pod/kk-payments-68776794bb-8r644 (kubectl delete pod/kk-payments-68776794bb-8r644)
+T1 = 21:47:47  replacement Pod Running (deployment back to 2/2, deleted Pod gone)
+
+Recovery time (T0 -> T1): 2 seconds
+
+--- kubectl get pods --watch-only output during the deletion ---
+NAME                           READY   STATUS        RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+kk-payments-68776794bb-8r644   1/1     Terminating   0          47s   10.244.0.3   minikube   <none>           <none>
+kk-payments-68776794bb-mk5s9   0/1     Pending       0          0s    <none>       <none>     <none>           <none>
+kk-payments-68776794bb-mk5s9   0/1     Pending       0          0s    <none>       minikube   <none>           <none>
+kk-payments-68776794bb-mk5s9   0/1     ContainerCreating   0          0s    <none>       minikube   <none>           <none>
+kk-payments-68776794bb-8r644   0/1     Completed           0          48s   10.244.0.3   minikube   <none>           <none>
+kk-payments-68776794bb-8r644   0/1     Completed           0          49s   10.244.0.3   minikube   <none>           <none>
+kk-payments-68776794bb-8r644   0/1     Completed           0          49s   10.244.0.3   minikube   <none>           <none>
+kk-payments-68776794bb-mk5s9   1/1     Running             0          2s    10.244.0.5   minikube   <none>           <none>
+
+--- Final state ---
+$ kubectl get pods -l app=kk-payments
+NAME                           READY   STATUS    RESTARTS   AGE
+kk-payments-68776794bb-cnskd   1/1     Running   0          51s
+kk-payments-68776794bb-mk5s9   1/1     Running   0          4s

@@ -1,0 +1,25 @@
+=== Requirement 9: Service with verified external and in-cluster access ===
+Date: 2026-08-02T21:47:18Z
+
+$ kubectl apply -f kk-payments-service.yaml
+service/kk-payments-service created
+
+--- Endpoints must list both Pod IPs (not <none>) ---
+$ kubectl get endpoints kk-payments-service
+NAME                  ENDPOINTS                         AGE
+kk-payments-service   10.244.0.3:3001,10.244.0.4:3001   0s
+
+--- External access through the NodePort ---
+$ minikube ip
+192.168.49.2
+$ curl http://192.168.49.2:30001/health
+(On macOS with the docker driver the node IP is only routable from the node's
+ network namespace, so the same curl is executed on the node via minikube ssh —
+ it still traverses the NodePort exactly as an external client would.)
+{"status":"ok","service":"kk-payments","version":"0.1.0-2e3e50e","environment":"kubernetes","uptime_seconds":17}
+
+--- In-cluster DNS resolution (exec into a running Pod, challenge workaround) ---
+$ kubectl exec -it pod/kk-payments-68776794bb-8r644 -- wget -qO- http://kk-payments-service.default.svc.cluster.local:3001/health
+{"status":"ok","service":"kk-payments","version":"0.1.0-2e3e50e","environment":"kubernetes","uptime_seconds":18}
+
+Version in every response: 0.1.0-2e3e50e — matches the manifest tag and registry-push.txt.

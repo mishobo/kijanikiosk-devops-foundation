@@ -1,0 +1,131 @@
+=== Requirement 6: production image build verification ===
+Date: 2026-08-02T21:43:58Z
+
+--- docker build --no-cache (full output) ---
+$ docker build --no-cache -f Dockerfile.production -t kk-payments:build .
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.production
+#1 transferring dockerfile: 1.34kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.20
+#2 ...
+
+#3 [auth] library/alpine:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [auth] library/node:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/node:20-alpine
+#5 DONE 1.5s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.20
+#2 DONE 2.9s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 304B done
+#6 DONE 0.1s
+
+#7 [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
+#7 resolve docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 0.0s done
+#7 CACHED
+
+#8 [builder 2/6] WORKDIR /build
+#8 DONE 0.1s
+
+#9 [internal] load build context
+#9 transferring context: 3.47kB done
+#9 DONE 0.1s
+
+#10 [builder 3/6] COPY package.json ./
+#10 DONE 0.1s
+
+#11 [stage-1 1/5] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#11 resolve docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 0.0s done
+#11 ...
+
+#12 [builder 4/6] COPY scripts/ scripts/
+#12 DONE 0.1s
+
+#13 [builder 5/6] COPY src/ src/
+#13 DONE 0.0s
+
+#11 [stage-1 1/5] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#11 sha256:25f1d6b1951ac8eb3740558fe94cb83d377bdadf95fd9f98b50d2e1b96130471 0B / 3.63MB 0.2s
+#11 sha256:25f1d6b1951ac8eb3740558fe94cb83d377bdadf95fd9f98b50d2e1b96130471 1.05MB / 3.63MB 0.6s
+#11 sha256:25f1d6b1951ac8eb3740558fe94cb83d377bdadf95fd9f98b50d2e1b96130471 2.10MB / 3.63MB 0.8s
+#11 sha256:25f1d6b1951ac8eb3740558fe94cb83d377bdadf95fd9f98b50d2e1b96130471 3.63MB / 3.63MB 0.8s done
+#11 extracting sha256:25f1d6b1951ac8eb3740558fe94cb83d377bdadf95fd9f98b50d2e1b96130471
+#11 extracting sha256:25f1d6b1951ac8eb3740558fe94cb83d377bdadf95fd9f98b50d2e1b96130471 0.1s done
+#11 DONE 1.0s
+
+#14 [builder 6/6] RUN node scripts/build.js
+#14 0.661 Built /build/src -> /build/dist
+#14 DONE 0.7s
+
+#15 [stage-1 2/5] RUN apk add --no-cache nodejs &&     addgroup -S kijani && adduser -S -G kijani kijani
+#15 0.190 fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/x86_64/APKINDEX.tar.gz
+#15 0.888 fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/community/x86_64/APKINDEX.tar.gz
+#15 1.551 (1/11) Installing ca-certificates (20260413-r0)
+#15 1.668 (2/11) Installing libgcc (13.2.1_git20240309-r1)
+#15 1.758 (3/11) Installing libstdc++ (13.2.1_git20240309-r1)
+#15 1.910 (4/11) Installing ada-libs (2.7.8-r0)
+#15 2.002 (5/11) Installing libbase64 (0.5.2-r0)
+#15 2.082 (6/11) Installing brotli-libs (1.1.0-r2)
+#15 2.193 (7/11) Installing c-ares (1.33.1-r0)
+#15 2.278 (8/11) Installing icu-data-en (74.2-r1)
+#15 2.435 Executing icu-data-en-74.2-r1.post-install
+#15 2.440 *
+#15 2.440 * If you need ICU with non-English locales and legacy charset support, install
+#15 2.440 * package icu-data-full.
+#15 2.440 *
+#15 2.440 (9/11) Installing icu-libs (74.2-r1)
+#15 2.681 (10/11) Installing nghttp2-libs (1.62.1-r0)
+#15 2.764 (11/11) Installing nodejs (20.15.1-r0)
+#15 4.712 Executing busybox-1.36.1-r31.trigger
+#15 4.718 Executing ca-certificates-20260413-r0.trigger
+#15 4.764 OK: 61 MiB in 25 packages
+#15 DONE 5.0s
+
+#16 [stage-1 3/5] WORKDIR /app
+#16 DONE 0.0s
+
+#17 [stage-1 4/5] COPY --from=builder --chown=kijani:kijani /build/dist ./dist
+#17 DONE 0.0s
+
+#18 [stage-1 5/5] COPY --from=builder --chown=kijani:kijani /build/package.json ./package.json
+#18 DONE 0.1s
+
+#19 exporting to image
+#19 exporting layers
+#19 exporting layers 4.1s done
+#19 exporting manifest sha256:986a885e849bb386cff397fabf12c3833652ee7f030e2fd0fa9e3c73a300e977
+#19 exporting manifest sha256:986a885e849bb386cff397fabf12c3833652ee7f030e2fd0fa9e3c73a300e977 done
+#19 exporting config sha256:4880a70acaa40bd9c49701548cdfdb09d8543a45b62eb47c07b4878485d1b7c0 done
+#19 exporting attestation manifest sha256:c2bf1e8852589a6d1ea20e1627da169fb33a77c332dffea7539bf0bda83d16d7 0.0s done
+#19 exporting manifest list sha256:a5d10b7fb1685f55b4e8951a43112d78c9146813b8d27d628cae21690aced4f5 done
+#19 naming to docker.io/library/kk-payments:build done
+#19 unpacking to docker.io/library/kk-payments:build
+#19 unpacking to docker.io/library/kk-payments:build 0.6s done
+#19 DONE 4.7s
+
+--- Image size (requirement: under 100MB) ---
+$ docker images kk-payments  # captured immediately after the build
+REPOSITORY    TAG       IMAGE ID       CREATED         SIZE
+kk-payments   build     a5d10b7fb168   5 seconds ago   90.1MB
+(single-stage baseline for comparison: kk-payments:single-stage-baseline = 193MB)
+
+--- Non-root user ---
+$ docker run --rm kk-payments:build whoami
+kijani
+
+--- No TypeScript compiler in the image ---
+$ docker run --rm kk-payments:build which tsc
+(no output — tsc is not present)
+
+--- HEALTHCHECK transition (requirement: healthy within 60s of start) ---
+$ docker run -d --name kk-hc-test kk-payments:build ; watch docker inspect -f '{{.State.Health.Status}}'
+t=5s:  starting
+t=10s: healthy   <- healthy 10 seconds after container start

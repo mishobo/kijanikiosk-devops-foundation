@@ -1,0 +1,35 @@
+=== Requirement 8: deployment on a clean cluster ===
+Date: 2026-08-02T21:46:57Z
+Cluster: fresh Minikube (docker driver), started with --insecure-registry=host.minikube.internal:5001 (integration challenge F). All commands pinned to the minikube context.
+
+--- Cluster reset confirmation (clean default namespace) ---
+$ kubectl delete deployment kk-payments 2>/dev/null || true
+$ kubectl delete service kk-payments-service 2>/dev/null || true
+$ kubectl get all -l app=kk-payments
+No resources found in default namespace.
+
+--- ImagePullSecret recreated after the Minikube restart (challenge F), before any manifest ---
+$ kubectl create secret docker-registry kijani-registry-credentials --docker-server=host.minikube.internal:5001 --docker-username=kijani --docker-password=REDACTED
+secret/kijani-registry-credentials created
+$ kubectl get secret kijani-registry-credentials
+NAME                          TYPE                             DATA   AGE
+kijani-registry-credentials   kubernetes.io/dockerconfigjson   1      0s
+
+--- No locally cached production image: this is a cold pull from the registry ---
+$ docker images | grep 'kk-payments:0.1.0'   # (no output — image exists only in the registry)
+
+--- Apply the deployment manifest ---
+$ kubectl apply -f kk-payments-deployment.yaml
+deployment.apps/kk-payments created
+$ kubectl rollout status deployment/kk-payments --timeout=180s
+Waiting for deployment "kk-payments" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "kk-payments" rollout to finish: 1 of 2 updated replicas are available...
+deployment "kk-payments" successfully rolled out
+
+$ kubectl get deployment kk-payments
+NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+kk-payments   2/2     2            2           3s
+$ kubectl get pods -l app=kk-payments -o wide
+NAME                           READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+kk-payments-68776794bb-8r644   1/1     Running   0          3s    10.244.0.3   minikube   <none>           <none>
+kk-payments-68776794bb-cnskd   1/1     Running   0          3s    10.244.0.4   minikube   <none>           <none>
