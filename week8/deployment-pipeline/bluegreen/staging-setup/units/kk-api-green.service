@@ -1,0 +1,13 @@
+[Unit]
+Description=KijaniKiosk payments API (green environment)
+After=network.target
+
+[Service]
+Type=simple
+User=kijani
+EnvironmentFile=/opt/kijanikiosk/releases/green/env
+ExecStart=/usr/bin/node /opt/kijanikiosk/releases/green/current/dist/server.js
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

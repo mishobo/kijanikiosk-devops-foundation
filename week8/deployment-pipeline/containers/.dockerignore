@@ -1,0 +1,17 @@
+# Never allow dependencies, VCS history, tests, secrets, or stale build
+# output into the build context.
+node_modules
+.git
+.gitignore
+test
+**/*.test.js
+.env
+.env.*
+*.env
+dist
+*.md
+*.log
+*.txt
+*.yaml
+Dockerfile*
+.dockerignore
