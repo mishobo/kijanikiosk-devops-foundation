@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kk-api
+  namespace: kijani-project
+  labels:
+    app: kk-api
+spec:
+  type: ClusterIP
+  selector:
+    app: kk-api
+  ports:
+    - name: http
+      protocol: TCP
+      # Service port other components (and the Ingress) use to reach kk-api.
+      port: 8080
+      # Port nginx actually listens on inside the container.
+      targetPort: 80

@@ -1,0 +1,14 @@
+$ kubectl get pods -n kijani-project -l app=kk-payments   (after rollback)
+
+NAME                           READY   STATUS    RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+kk-payments-7c6fd5f977-9xtbd   1/1     Running   0          6m26s   10.244.0.8    minikube   <none>           <none>
+kk-payments-7c6fd5f977-c5s4f   1/1     Running   0          6m26s   10.244.0.7    minikube   <none>           <none>
+kk-payments-7c6fd5f977-r9grb   1/1     Running   0          96s     10.244.0.14   minikube   <none>           <none>
+
+--- image now running on the pods ---
+kk-payments-7c6fd5f977-9xtbd  kijani/kk-payments:v1.1.0
+kk-payments-7c6fd5f977-c5s4f  kijani/kk-payments:v1.1.0
+kk-payments-7c6fd5f977-r9grb  kijani/kk-payments:v1.1.0
+
+--- route after rollback ---
+GET /payments/health -> {"status":"ok","service":"kk-payments","version":"1.1.0","environment":"production","uptime_seconds":95}
