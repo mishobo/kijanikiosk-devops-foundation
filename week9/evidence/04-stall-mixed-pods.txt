@@ -1,0 +1,11 @@
+$ kubectl get pods -n kijani-project -l app=kk-payments   (during stalled rollout)
+
+NAME                           READY   STATUS             RESTARTS   AGE
+kk-payments-744c8b5946-847kf   0/1     ImagePullBackOff   0          57s
+kk-payments-744c8b5946-b6mzk   0/1     ImagePullBackOff   0          57s
+kk-payments-7c6fd5f977-9xtbd   1/1     Running            0          4m32s
+kk-payments-7c6fd5f977-c5s4f   1/1     Running            0          4m32s
+
+--- Ingress /payments/ still serving from original v1.1.0 pods during the stall ---
+GET /payments/       -> HTTP 200
+GET /payments/health -> {"status":"ok","service":"kk-payments","version":"1.1.0","environment":"production","uptime_seconds":270}

@@ -1,0 +1,7 @@
+$ kubectl rollout history deployment/kk-payments -n kijani-project   (final)
+
+deployment.apps/kk-payments 
+REVISION  CHANGE-CAUSE
+2         Deliberate regression: v9.9.9-bad does not exist
+3         Initial production-approaching deployment: v1.1.0
+

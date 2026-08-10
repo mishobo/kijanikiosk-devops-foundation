@@ -1,0 +1,20 @@
+$ kubectl describe ingress kijani-ingress -n kijani-project
+
+Name:             kijani-ingress
+Labels:           <none>
+Namespace:        kijani-project
+Address:          192.168.49.2
+Ingress Class:    nginx
+Default backend:  <default>
+Rules:
+  Host          Path  Backends
+  ----          ----  --------
+  kijani.local  
+                /api(/|$)(.*)        kk-api:8080 (10.244.0.10:80,10.244.0.9:80)
+                /payments(/|$)(.*)   kk-payments:3001 (10.244.0.11:3001,10.244.0.7:3001,10.244.0.8:3001)
+Annotations:    nginx.ingress.kubernetes.io/rewrite-target: /$2
+                nginx.ingress.kubernetes.io/use-regex: true
+Events:
+  Type    Reason  Age                From                      Message
+  ----    ------  ----               ----                      -------
+  Normal  Sync    68s (x2 over 86s)  nginx-ingress-controller  Scheduled for sync

@@ -1,0 +1,20 @@
+$ kubectl get all -n kijani-project
+
+NAME                               READY   STATUS    RESTARTS   AGE
+pod/kk-api-5d4cdd585d-b8szw        1/1     Running   0          2m8s
+pod/kk-api-5d4cdd585d-w5fzw        1/1     Running   0          2m8s
+pod/kk-payments-7c6fd5f977-9xtbd   1/1     Running   0          2m8s
+pod/kk-payments-7c6fd5f977-c5s4f   1/1     Running   0          2m8s
+pod/kk-payments-7c6fd5f977-w746g   1/1     Running   0          2m8s
+
+NAME                  TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+service/kk-api        ClusterIP   10.99.72.58   <none>        8080/TCP   2m8s
+service/kk-payments   ClusterIP   10.97.60.52   <none>        3001/TCP   2m8s
+
+NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/kk-api        2/2     2            2           2m8s
+deployment.apps/kk-payments   3/3     3            3           2m8s
+
+NAME                                     DESIRED   CURRENT   READY   AGE
+replicaset.apps/kk-api-5d4cdd585d        2         2         2       2m8s
+replicaset.apps/kk-payments-7c6fd5f977   3         3         3       2m8s
