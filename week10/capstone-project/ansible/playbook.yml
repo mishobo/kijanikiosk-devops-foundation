@@ -1,0 +1,41 @@
+---
+- name: Configure kijani-staging for kk-payments
+  hosts: local
+  connection: local
+  gather_facts: false
+
+  vars:
+    kube_context: minikube
+
+  tasks:
+    # Fails loudly rather than silently applying to whatever namespace
+    # Terraform's current-context happened to create — the staging
+    # namespace must already exist (Terraform's job, not Ansible's).
+    - name: Confirm the staging namespace exists
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Namespace
+        name: "{{ target_namespace }}"
+        context: "{{ kube_context }}"
+      register: ns_check
+      failed_when: ns_check.resources | length == 0
+
+    - name: Render kk-payments ConfigMap for staging
+      ansible.builtin.set_fact:
+        rendered_configmap: "{{ lookup('template', 'templates/kk-payments-configmap.yaml.j2') | from_yaml }}"
+
+    - name: Apply staging ConfigMap (environment-specific DB_HOST, same keys as production)
+      kubernetes.core.k8s:
+        state: present
+        context: "{{ kube_context }}"
+        definition: "{{ rendered_configmap }}"
+
+    - name: Confirm ConfigMap applied with the expected DB_HOST
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: ConfigMap
+        name: "{{ configmap_name }}"
+        namespace: "{{ target_namespace }}"
+        context: "{{ kube_context }}"
+      register: configmap_check
+      failed_when: configmap_check.resources[0].data.DB_HOST != db_host

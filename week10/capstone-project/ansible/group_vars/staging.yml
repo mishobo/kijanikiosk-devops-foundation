@@ -1,0 +1,15 @@
+---
+# Staging-specific values. RECEIPTS_BUCKET is a copy of the Terraform
+# output `receipts_bucket` (kijani-payments-receipts-staging) — kept as an
+# explicit variable here rather than re-derived, so a `terraform output`
+# drift is visible as a diff instead of silently propagating.
+target_namespace: kijani-staging
+configmap_name: kk-payments-config
+db_host: kk-postgres.kijani-staging.svc.cluster.local
+db_port: "5432"
+node_env: staging
+log_level: debug
+app_port: "3001"
+max_connections: "20"
+receipts_bucket: kijani-payments-receipts-staging
+s3_local_root: /tmp/kijani-s3-local
