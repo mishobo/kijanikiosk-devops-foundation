@@ -1,0 +1,23 @@
+# Staging ConfigMap. This file is the checked-in, human-readable copy of
+# what ansible/playbook.yml renders from
+# ansible/templates/kk-payments-configmap.yaml.j2 + ansible/group_vars/staging.yml.
+# The Ansible run is the source of truth during the pipeline; this file lets
+# a reviewer `kubectl diff` staging against production without running
+# Ansible first.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kk-payments-config
+  namespace: kijani-staging
+  labels:
+    app: kk-payments
+    environment: staging
+data:
+  NODE_ENV: "staging"
+  DB_HOST: "kk-postgres.kijani-staging.svc.cluster.local"
+  DB_PORT: "5432"
+  LOG_LEVEL: "debug"
+  APP_PORT: "3001"
+  MAX_CONNECTIONS: "20"
+  RECEIPTS_BUCKET: "kijani-payments-receipts-staging"
+  S3_LOCAL_ROOT: "/tmp/kijani-s3-local"

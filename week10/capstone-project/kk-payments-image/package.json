@@ -1,0 +1,10 @@
+{
+  "name": "kijanikiosk-payments",
+  "version": "1.2.0",
+  "description": "Kijani Kiosk payments service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "UNLICENSED"
+}
