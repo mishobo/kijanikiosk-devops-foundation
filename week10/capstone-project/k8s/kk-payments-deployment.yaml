@@ -1,0 +1,74 @@
+# Namespace is intentionally omitted from this manifest. The same file is
+# applied to both kijani-staging and kijani-project (production) via
+# `kubectl apply -f k8s/kk-payments-deployment.yaml -n <namespace>`, so the
+# Deployment definition never drifts between environments — only the
+# ConfigMap referenced by envFrom differs per namespace.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kk-payments
+  labels:
+    app: kk-payments
+  annotations:
+    kubernetes.io/change-cause: "Add /pay endpoint + receipt bucket integration: v1.2.0"
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: kk-payments
+  template:
+    metadata:
+      labels:
+        app: kk-payments
+    spec:
+      containers:
+        - name: kk-payments
+          # Built locally into the minikube Docker daemon as kijani/kk-payments:v1.2.0.
+          # imagePullPolicy IfNotPresent lets the cluster use the local image without a registry.
+          image: kijani/kk-payments:v1.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - configMapRef:
+                name: kk-payments-config
+            - secretRef:
+                name: kk-payments-secrets
+          # The local S3 mock directory must be shared between the host and
+          # the container so writes from kk-payments are visible to the
+          # serverless chain running on the host. See docs/runbook.md.
+          volumeMounts:
+            - name: s3-local
+              mountPath: /tmp/kijani-s3-local
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: s3-local
+          hostPath:
+            path: /tmp/kijani-s3-local
+            type: DirectoryOrCreate
