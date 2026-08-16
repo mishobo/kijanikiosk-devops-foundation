@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# Ansible
+ansible/*.retry
+
+# Generated monitoring output
+monitoring/error-rate-summary.json
+
+# Secrets — never commit real values
+k8s/kk-payments-secrets.yaml
+*.env
+
+# OS
+.DS_Store

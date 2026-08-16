@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ configmap_name }}
+  namespace: {{ target_namespace }}
+  labels:
+    app: kk-payments
+    environment: {{ node_env }}
+data:
+  NODE_ENV: "{{ node_env }}"
+  DB_HOST: "{{ db_host }}"
+  DB_PORT: "{{ db_port }}"
+  LOG_LEVEL: "{{ log_level }}"
+  APP_PORT: "{{ app_port }}"
+  MAX_CONNECTIONS: "{{ max_connections }}"
+  RECEIPTS_BUCKET: "{{ receipts_bucket }}"
+  S3_LOCAL_ROOT: "{{ s3_local_root }}"
