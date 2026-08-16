@@ -1,0 +1,120 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME    = 'kijani/kk-payments'
+        STAGING_NS    = 'kijani-staging'
+        PROD_NS       = 'kijani-project'
+        KUBE_CONTEXT  = 'minikube'
+        PKG_VERSION   = sh(script: "node -p \"require('./kk-payments-image/package.json').version\"", returnStdout: true).trim()
+        GIT_SHORT     = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        IMAGE_TAG     = "${PKG_VERSION}-${GIT_SHORT}"
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Build image') {
+            steps {
+                // Build directly into the minikube Docker daemon so the
+                // Deployment's imagePullPolicy: IfNotPresent finds the
+                // image without a registry (matches Week 8/9 convention).
+                sh """
+                    eval \$(minikube docker-env)
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} kk-payments-image/
+                """
+            }
+        }
+
+        // --- INFRASTRUCTURE LAYER ---
+        stage('Provision staging infra') {
+            steps {
+                dir('terraform') {
+                    sh 'terraform init -input=false'
+                    sh 'terraform apply -auto-approve -input=false'
+                }
+            }
+        }
+
+        stage('Configure staging') {
+            steps {
+                dir('ansible') {
+                    sh 'ansible-galaxy collection install -r requirements.yml'
+                    sh 'ansible-playbook -i inventory/hosts.ini playbook.yml'
+                }
+            }
+        }
+
+        // --- DELIVERY LAYER: staging deploy on every merge to main ---
+        stage('Deploy to staging') {
+            when { branch 'main' }
+            steps {
+                sh """
+                    kubectl apply -f k8s/kk-payments-deployment.yaml -n ${STAGING_NS} --context ${KUBE_CONTEXT}
+                    kubectl apply -f k8s/kk-payments-service.yaml -n ${STAGING_NS} --context ${KUBE_CONTEXT}
+                    kubectl set image deployment/kk-payments kk-payments=${IMAGE_NAME}:${IMAGE_TAG} -n ${STAGING_NS} --context ${KUBE_CONTEXT}
+                    kubectl rollout status deployment/kk-payments -n ${STAGING_NS} --context ${KUBE_CONTEXT} --timeout=120s
+                """
+            }
+        }
+
+        stage('Staging smoke test') {
+            when { branch 'main' }
+            steps {
+                sh "chmod +x scripts/smoke-test.sh && ./scripts/smoke-test.sh ${STAGING_NS} 13001"
+                sh "chmod +x monitoring/check-kk-payments-error-rate.sh && ./monitoring/check-kk-payments-error-rate.sh ${STAGING_NS}"
+            }
+        }
+
+        // The production approval gate only appears after the smoke test
+        // (previous stage) has exited 0 — Jenkins does not reach this input
+        // step on a failed prior stage, satisfying the "only offers the
+        // production approval gate after the smoke test passes" requirement.
+        stage('Production approval gate') {
+            when { branch 'main' }
+            steps {
+                script {
+                    def approval = input(
+                        message: "Promote ${IMAGE_TAG} to production (${PROD_NS})? Staging smoke test passed.",
+                        ok: 'Approve',
+                        submitterParameter: 'APPROVER',
+                        parameters: [
+                            text(name: 'APPROVAL_REASON', defaultValue: '', description: 'Why is this safe to promote? (recorded in build log)')
+                        ]
+                    )
+                    env.APPROVER = approval['APPROVER']
+                    env.APPROVAL_REASON = approval['APPROVAL_REASON']
+                    echo "Approved by ${env.APPROVER}: ${env.APPROVAL_REASON}"
+                }
+            }
+        }
+
+        stage('Deploy to production') {
+            when { branch 'main' }
+            steps {
+                sh """
+                    kubectl apply -f k8s/kk-payments-deployment.yaml -n ${PROD_NS} --context ${KUBE_CONTEXT}
+                    kubectl apply -f k8s/kk-payments-service.yaml -n ${PROD_NS} --context ${KUBE_CONTEXT}
+                    kubectl set image deployment/kk-payments kk-payments=${IMAGE_NAME}:${IMAGE_TAG} -n ${PROD_NS} --context ${KUBE_CONTEXT}
+                    kubectl rollout status deployment/kk-payments -n ${PROD_NS} --context ${KUBE_CONTEXT} --timeout=120s
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "kk-payments ${IMAGE_TAG} deployed. Staging smoke test passed. Production approved by ${env.APPROVER ?: 'n/a'}."
+        }
+        failure {
+            echo "Pipeline FAILED at build ${BUILD_NUMBER} - check logs at ${BUILD_URL}. Production was not touched unless 'Deploy to production' ran."
+        }
+        always {
+            archiveArtifacts artifacts: 'monitoring/error-rate-summary.json', allowEmptyArchive: true
+        }
+    }
+}

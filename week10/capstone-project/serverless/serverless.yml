@@ -1,0 +1,89 @@
+service: kijanikiosk-receipt-chain
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: eu-west-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    STAGE: ${self:custom.stage}
+    S3_LOCAL_ROOT: ${env:S3_LOCAL_ROOT, '/tmp/kijani-s3-local'}
+    RECEIPTS_BUCKET: ${self:custom.receiptsBucket}
+    PROCESSED_BUCKET: ${self:custom.processedBucket}
+    NOTIFICATIONS_BUCKET: ${self:custom.notificationsBucket}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Resource:
+            - arn:aws:s3:::${self:custom.receiptsBucket}/*
+            - arn:aws:s3:::${self:custom.processedBucket}/*
+            - arn:aws:s3:::${self:custom.notificationsBucket}/*
+
+# Single source of truth for bucket names. kk-payments (Kubernetes layer)
+# reads the same RECEIPTS_BUCKET value via its ConfigMap so the bucket name
+# can never drift between the two layers — see docs/runbook.md "Integration
+# seam" for the failure mode this prevents.
+custom:
+  stage: ${opt:stage, 'dev'}
+  receiptsBucket: kijani-payments-receipts-${self:custom.stage}
+  processedBucket: kijani-payments-processed-${self:custom.stage}
+  notificationsBucket: kijani-payments-notifications-${self:custom.stage}
+  s3:
+    host: 0.0.0.0
+    port: 8000
+    directory: ${env:S3_LOCAL_ROOT, '/tmp/kijani-s3-local'}
+  serverless-offline:
+    httpPort: 4000
+
+plugins:
+  - serverless-s3-local
+  - serverless-offline
+
+functions:
+  kkReceipts:
+    handler: handlers/receipts.handler
+    description: Fires when kk-payments (Kubernetes) writes a receipt to the receipts bucket. Validates the receipt and forwards it to the processed bucket.
+    events:
+      - s3:
+          bucket: ${self:custom.receiptsBucket}
+          event: s3:ObjectCreated:*
+          existing: true
+
+  kkProcessor:
+    handler: handlers/processor.handler
+    description: Fires when kk-receipts writes to the processed bucket. Enriches the receipt (tax line, processed timestamp) and forwards to the notifications bucket.
+    events:
+      - s3:
+          bucket: ${self:custom.processedBucket}
+          event: s3:ObjectCreated:*
+          existing: true
+
+  kkNotifier:
+    handler: handlers/notifier.handler
+    description: Fires when kk-processor writes to the notifications bucket. Logs a structured notification summary (stands in for an email/SMS receipt in production).
+    events:
+      - s3:
+          bucket: ${self:custom.notificationsBucket}
+          event: s3:ObjectCreated:*
+          existing: true
+
+resources:
+  Resources:
+    ReceiptsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.receiptsBucket}
+    ProcessedBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.processedBucket}
+    NotificationsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.notificationsBucket}

@@ -1,0 +1,8 @@
+@page { size: Letter; margin: 0.45in; }
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 9.5pt; line-height: 1.28; color: #111; max-width: 100%; }
+h1 { font-size: 15pt; margin: 0 0 6px 0; }
+h2 { font-size: 11pt; margin: 8px 0 2px 0; border-bottom: 1px solid #ccc; }
+p, ul, ol { margin: 2px 0 6px 0; }
+ul, ol { padding-left: 18px; }
+li { margin-bottom: 1px; }
+strong { font-weight: 600; }
