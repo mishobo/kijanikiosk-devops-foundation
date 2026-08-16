@@ -1,0 +1,16 @@
+{
+  "name": "kijanikiosk-receipt-chain",
+  "version": "1.0.0",
+  "description": "KijaniKiosk Week 10 serverless receipt chain: kk-receipts -> kk-processor -> kk-notifier",
+  "private": true,
+  "scripts": {
+    "offline": "serverless offline start --stage dev",
+    "print:staging": "serverless print --stage staging --format yaml",
+    "local-chain": "node ../scripts/run-local-chain.js"
+  },
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-offline": "^13.3.3",
+    "serverless-s3-local": "^0.8.1"
+  }
+}
